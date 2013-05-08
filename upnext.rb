@@ -1,5 +1,6 @@
 require './lib/dacpclient'
 require 'socket'
+require 'tempfile'
 
 client = DACPClient.new "Ruby (#{Socket.gethostname})", 'localhost', 3689
 client.login [1,2,3,4] #use this pin to pair in iTunes
@@ -13,8 +14,16 @@ puts "Library Playlist: #{library}"
 search = 'Crossroads' #search term, only supports song name right now
 
 results = client.search db, library, search
+
 songs = []
 results.mlcl.each { |x| songs.push({'name' => x.minm, 'artist' => x.asar, 'album' => x.asal, 'id' => x.miid}) }
 puts songs
 
-client.queue songs[0]['id'] #adds the first result to 'Up Next' in iTunes
+#client.queue songs[0]['id'] #adds the first result to 'Up Next' in iTunes
+
+songs.each do |song|
+  art = client.artwork db, song['id']
+  file = Tempfile.new([song['id'], '.png'])
+  file.write(art)
+  puts file.path
+end

@@ -54,6 +54,10 @@ class DACPClient
     pair pin 
     retry
   end
+
+  def artwork database, id, width = 320, height = 320
+	do_action :"databases/#{database}/items/#{id}/extra_data/artwork", {'mw' => width, 'mh' => height}, true, {}
+  end
   
   def content_codes
     do_action 'content-codes', {}, true
@@ -151,7 +155,12 @@ class DACPClient
       p res
       return nil
     end
-    DMAPParser.parse res.body
+	#puts res['Content-Type']
+	if res['Content-Type'] == 'application/x-dmap-tagged'
+    	  DMAPParser.parse res.body
+	elsif res['Content-Type'] == 'image/png'
+	  return res.body
+	end
   end
 end
 class DACPForbiddenError < StandardError
