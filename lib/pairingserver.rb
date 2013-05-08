@@ -16,7 +16,7 @@ class PairingServer
     name = @name
     pair  = @pair
     device_type = @device_type
-    puts "Pairing started (pincode=#{@pin.join})"
+    #puts "Pairing started (pincode=#{@pin.join})"
     txtrecord = DNSSD::TextRecord.new({
       'DvNm' => @name,
       'Revm' => '10000',
@@ -43,11 +43,11 @@ class PairingServer
       if code == expected
         client.print "HTTP/1.1 200 OK\r\nContent-Length: #{pairingstring.length}\r\n\r\n#{pairingstring}"
 
-        puts "Pairing succeeded :)"
+        #puts "Pairing succeeded :)"
         client.close
         break
       else
-        puts "Wrong pincode entered"
+        #puts "Wrong pincode entered"
         client.print "HTTP/1.1 404 Not Found\r\nContent-Length: 0\r\n\r\n"
       end
       client.close

@@ -31,12 +31,23 @@ class DACPClient
   def serverinfo
     do_action 'server-info'
   end
+
+  def is_paired
+	begin
+	  response = do_action :'login', {'pairing-guid' => '0x'+ DACPClient::getGUID(@name)}
+	  @session_id = response[:mlid]
+	rescue DACPForbiddenError=>e
+	  return false
+	else
+	  return true
+	end
+  end
   
   def login pin = nil
     response = do_action :'login', {'pairing-guid' => '0x'+ DACPClient::getGUID(@name)}
     @session_id = response[:mlid]
   rescue DACPForbiddenError=>e
-    puts "#{e.result.message} error: Cannot login, starting pairing process"
+    #puts "#{e.result.message} error: Cannot login, starting pairing process"
 	if pin == nil
 		pin = 4.times.map{ Random.rand(10)}
 	end
