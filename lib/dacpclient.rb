@@ -94,7 +94,7 @@ class DACPClient
 	queries.push(words.map{|v| "\'dmap.itemname:*#{v}*\'"}.join('+'))
 	#queries.push(words.map{|v| "\'daap.songartist:*#{v}*\'"}.join('+'))
 	query = queries.map{|q| "(#{q})"}.join(',')
-	puts query
+	#puts query
 	do_action :"databases/#{db}/containers/#{container}/items", {'type' => 'music', 'sort' => 'album'}, true, {'meta' => 'dmap.itemid,dmap.itemname,daap.songartist,daap.songalbum', 'query' => "(#{query})"}
   end
   

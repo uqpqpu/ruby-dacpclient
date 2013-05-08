@@ -17,7 +17,7 @@ class PairingServer
     pair  = @pair
     device_type = @device_type
     puts "Pairing started (pincode=#{@pin.join})"
-    txtrecord = DNSSD::TextRecord.new ({
+    txtrecord = DNSSD::TextRecord.new({
       'DvNm' => @name,
       'Revm' => '10000',
       'DvTy' => @device_type,
