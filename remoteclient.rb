@@ -58,6 +58,11 @@ class CLIClient
     @client.prev
     status
   end
+
+  def databases
+    login
+    puts @client.databases
+  end
   
   def usage
     puts "Usage: #{$0} [command]"

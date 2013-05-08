@@ -32,12 +32,12 @@ class DACPClient
     do_action 'server-info'
   end
   
-  def login
-    response = do_action :login, {'pairing-guid' => '0x'+ DACPClient::getGUID(@name)}
+  def login pin = 4.times.map{ Random.rand(10)}
+    response = do_action :'login', {'pairing-guid' => '0x'+ DACPClient::getGUID(@name)}
     @session_id = response[:mlid]
   rescue DACPForbiddenError=>e
     puts "#{e.result.message} error: Cannot login, starting pairing process"
-    pair 4.times.map{ Random.rand(10)} 
+    pair pin 
     retry
   end
   
@@ -46,40 +46,62 @@ class DACPClient
   end
   
   def play
-    do_action :play
+    do_action :'play'
   end
   
   def playpause
-    do_action :playpause
+    do_action :'playpause'
   end
   
   def stop
-    do_action :stop
+    do_action :'stop'
   end
   
   def pause 
-    do_action :pause
+    do_action :'pause'
   end
   
   def status 
-    do_action :playstatusupdate, {'revision-number' => 1}
+    do_action :'playstatusupdate', {'revision-number' => 1}
   end
   
   def next
-    do_action :nextitem
+    do_action :'nextitem'
   end
   
   def prev
-    do_action :previtem
+    do_action :'previtem'
+  end
+
+  def queue id
+	do_action :'playqueue-edit', {}, false, {'command' => 'add', 'query' => "\'dmap.itemid:#{id}\'"}
+  end
+
+  def databases
+    do_action :'databases', {}, true
+  end
+
+  def playlists db
+    do_action :"databases/#{db}/containers", {}, true
+  end
+
+  def search db, container, search
+	words = search.split
+	queries = []
+	queries.push(words.map{|v| "\'dmap.itemname:*#{v}*\'"}.join('+'))
+	#queries.push(words.map{|v| "\'daap.songartist:*#{v}*\'"}.join('+'))
+	query = queries.map{|q| "(#{q})"}.join(',')
+	puts query
+	do_action :"databases/#{db}/containers/#{container}/items", {'type' => 'music', 'sort' => 'album'}, true, {'meta' => 'dmap.itemid,dmap.itemname,daap.songartist,daap.songalbum', 'query' => "(#{query})"}
   end
   
   def get_volume
-    response = do_action :getproperty, {properties: 'dmcp.volume'}
+    response = do_action :'getproperty', {'properties' => 'dmcp.volume'}
     response[:cmvo]
   end
   
   def set_volume volume
-    do_action :setproperty, {'dmcp.volume' => volume}
+    do_action :'setproperty', {'dmcp.volume' => volume}
   end
   
   def ctrl_int
@@ -87,20 +109,26 @@ class DACPClient
   end
   
   def logout
-    do_action :logout, {}, false
+    do_action :'logout', {}, false
   end
   
   private
   
-  def do_action action, params = {}, cleanurl = false 
+  def do_action action, params = {}, cleanurl = false , moreparams = {}
     action = '/'+action.to_s
     if !@session_id.nil?
       params['session-id'] = @session_id
       action = '/ctrl-int/1'+action unless cleanurl
     end
     params = params.map{|k,v| "#{CGI.escape(k.to_s)}=#{CGI.escape(v.to_s)}"}.join '&'
-    uri = URI::HTTP.build({host: @host, port: @port, path: action, query:params})
+	if !moreparams.empty?
+		moreparams = moreparams.map{|k,v| "#{k}=#{v}"}.join '&'
+		params = "#{params}&#{moreparams}"
+	end
+	
+    uri = URI::HTTP.build({:host => @host, :port => @port, :path => action, :query => params})
     req = Net::HTTP::Get.new(uri.request_uri)
+	#puts uri.request_uri
     req.add_field 'Viewer-Only-Client', '1'
     res = Net::HTTP.new(uri.host, uri.port).start {|http| http.request(req) }
     if res.kind_of? Net::HTTPServiceUnavailable or res.kind_of? Net::HTTPForbidden
