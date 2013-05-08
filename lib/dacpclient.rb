@@ -1,8 +1,8 @@
 require 'digest'
 require 'net/http'
-require_relative './pairingserver'
-require_relative './dmapparser'
-require_relative './dmapbuilder'
+require './lib/pairingserver'
+require './lib/dmapparser'
+require './lib/dmapbuilder'
 require 'uri'
 require 'cgi'
 

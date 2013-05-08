@@ -1,5 +1,5 @@
-require_relative './tagdefinitions'
-require_relative './dmapconverter'
+require './lib/tagdefinitions'
+require './lib/dmapconverter'
 require 'stringio'
 
 class DMAPParser
