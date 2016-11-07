@@ -70,6 +70,17 @@ module DACPClient
       pairingserver.pin = pin
       pairingserver.start
     end
+    
+    def is_paired
+      begin
+    	  response = do_action(:login, :'pairing-guid' => '0x' + guid)
+    	  @session_id = response[:mlid]
+    	rescue DACPForbiddenError=>e
+    	  return false
+    	else
+    	  return true
+    	end
+    end
 
     def serverinfo
       do_action('server-info', clean_url: true)
@@ -228,7 +239,7 @@ module DACPClient
 
     def artwork(database, id, width = 320, height = 320)
       url = "databases/#{database}/items/#{id}/extra_data/artwork"
-      do_action(url, { mw: width, mh: height }, clean_url: true)
+      do_action(url, mw: width, mh: height, clean_url: true)
     end
 
     def now_playing_artwork(width = 320, height = 320)
@@ -237,32 +248,33 @@ module DACPClient
 
     def search(search, type = nil, db = default_db,
                container = default_playlist(default_db))
-      search = URI.escape(search)
+      words = search.split
       types = {
         title: 'dmap.itemname',
         artist: 'daap.songartist',
-        album: 'daap.songalbum',
-        genre: 'daap.songgenre',
-        composer: 'daap.songcomposer'
+        album: 'daap.songalbum'
       }
       queries = []
       type = types.keys if type.nil?
+      
       Array(type).each do |t|
-        queries << "'#{types[t]}:#{search}'"
+        queries.push(words.map{|v| "\'#{types[t]}:*#{v}*\'"}.join('+'))
       end
 
-      q = queries.join(',')
-      q = '(' + q + ')' if queries.length > 1
-      meta  = %w(dmap.itemname dmap.itemid com.apple.itunes.has-chapter-data
-                 daap.songalbum com.apple.itunes.cloud-id dmap.containeritemid
-                 com.apple.itunes.has-video com.apple.itunes.itms-songid
-                 com.apple.itunes.extended-media-kind dmap.downloadstatus
-                 daap.songdisabled daap.songhasbeenplayed daap.songbookmark
-                 com.apple.itunes.is-hd-video daap.songlongcontentdescription
-                 daap.songtime daap.songuserplaycount daap.songartist
-                 com.apple.itunes.content-rating daap.songdatereleased
-                 com.apple.itunes.movie-info-xml daap.songalbumartist
-                 com.apple.itunes.extended-media-kind).join(',')
+      q = '(' + queries.join(',') + ')'
+      
+#       meta  = %w(dmap.itemname dmap.itemid com.apple.itunes.has-chapter-data
+#                  daap.songalbum com.apple.itunes.cloud-id dmap.containeritemid
+#                  com.apple.itunes.has-video com.apple.itunes.itms-songid
+#                  com.apple.itunes.extended-media-kind dmap.downloadstatus
+#                  daap.songdisabled daap.songhasbeenplayed daap.songbookmark
+#                  com.apple.itunes.is-hd-video daap.songlongcontentdescription
+#                  daap.songtime daap.songuserplaycount daap.songartist
+#                  com.apple.itunes.content-rating daap.songdatereleased
+#                  com.apple.itunes.movie-info-xml daap.songalbumartist
+#                  com.apple.itunes.extended-media-kind).join(',')
+      meta  = %w(dmap.itemname dmap.itemid
+                 daap.songalbum daap.songartist).join(',')
       url = "databases/#{db.item_id}/containers/#{container.item_id}/items"
       do_action(url, query: q, type: 'music', sort: 'album', meta: meta,
                      :'include-sort-headers' => 1, clean_url: true)
