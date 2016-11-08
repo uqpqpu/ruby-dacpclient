@@ -256,13 +256,13 @@ module DACPClient
       }
       queries = []
       type = types.keys if type.nil?
-      
+
       Array(type).each do |t|
-        queries.push(words.map{|v| "\'#{types[t]}:*#{v}*\'"}.join('+'))
+        queries.push(words.map{|v| "'#{types[t]}:*#{v}*'"}.join('+'))
       end
 
-      q = '(' + queries.join(',') + ')'
-      
+      q = '(' + queries.map{|q| "(#{q})"}.join(',') + ')'
+
 #       meta  = %w(dmap.itemname dmap.itemid com.apple.itunes.has-chapter-data
 #                  daap.songalbum com.apple.itunes.cloud-id dmap.containeritemid
 #                  com.apple.itunes.has-video com.apple.itunes.itms-songid
